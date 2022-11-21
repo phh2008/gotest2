@@ -1,0 +1,10 @@
+p, admin, /api/v1/hello, GET
+p, role:admin, ad_campaign, GET
+p, role:admin, ad_campaign, LIST
+p, role:area_ad_admin, campaign, WRITE
+p, role:area_ad_admin, adgroup, WRITE
+p, role:area_ad_admin, adcreative, WRITE
+p, admin, /api/v1/hello/:id, GET
+g, role:admin, role:area_ad_admin
+g, kevin, role:admin
+g, tom, admin
