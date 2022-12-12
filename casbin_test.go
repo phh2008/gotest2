@@ -10,7 +10,7 @@ var e *casbin.Enforcer
 
 func init() {
 	var err error
-	e, err = casbin.NewEnforcer("D:/idea-space-go/go-test2/model.conf", "D:/idea-space-go/go-test2/policy.csv")
+	e, err = casbin.NewEnforcer("D:\\codespace\\golang_test\\go-test2\\model.conf", "D:\\codespace\\golang_test\\go-test2\\policy.csv")
 	if err != nil {
 		panic(err)
 	}

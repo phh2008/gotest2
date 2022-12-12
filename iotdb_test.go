@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	iotClient "github.com/apache/iotdb-client-go/client"
 	"github.com/apache/iotdb-client-go/rpc"
+	pool "github.com/jolestar/go-commons-pool/v2"
 	"log"
 	"math/rand"
 	"testing"
@@ -23,39 +25,74 @@ var config *iotClient.Config = &iotClient.Config{
 	UserName: user,
 	Password: password,
 }
-var session iotClient.Session
+
+// var session iotClient.Session
+var sessionPool *pool.ObjectPool
 
 func init() {
-	session = iotClient.NewSession(config)
-	if err := session.Open(false, 0); err != nil {
-		log.Fatal(err)
-	}
+	factory := pool.NewPooledObjectFactorySimple(
+		func(context.Context) (interface{}, error) {
+			session := iotClient.NewSession(config)
+			err := session.Open(false, 0)
+			return &session, err
+		})
+	ctx := context.Background()
+	poolConfig := pool.NewDefaultPoolConfig()
+	poolConfig.MaxTotal = 500
+	poolConfig.MinIdle = 20
+	poolConfig.MinEvictableIdleTime = -1
+	sessionPool = pool.NewObjectPool(ctx, factory, poolConfig)
 }
 
 func TestSetStorageGroup(t *testing.T) {
-	status, err := session.SetStorageGroup("root.ln")
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
+	status, err := session.SetStorageGroup("root.ln2")
 	checkError(status, err)
 }
 
 func TestCreateTimeSeries(t *testing.T) {
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
 	checkError(session.CreateTimeseries("root.ln.g1.d1.temperature", iotClient.FLOAT, iotClient.PLAIN, iotClient.SNAPPY, nil, nil))
 	checkError(session.CreateTimeseries("root.ln.g1.d1.status", iotClient.BOOLEAN, iotClient.PLAIN, iotClient.SNAPPY, nil, nil))
 }
 
 func TestDeleteTimeSeries(t *testing.T) {
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
 	checkError(session.DeleteTimeseries([]string{"root.ln.g1.d1"}))
 }
 
 func TestInsert(t *testing.T) {
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
 	checkError(session.InsertStringRecord("root.ln.g1.d1", []string{"temperature", "status"}, []string{"37.6", "false"}, time.Now().UnixMilli()))
 }
 
 func TestInsertMore(t *testing.T) {
-	date, _ := time.Parse("2006-01-02 15:04:05", "2022-06-01 00:00:00")
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
+	date, _ := time.Parse("2006-01-02 15:04:05", "2022-08-01 00:00:00")
 	rand.Seed(time.Now().UnixNano())
 	names := []string{"tom", "jack", "lili", "lucy", "张三丰", "李四", "王五"}
 	namesSize := len(names)
-	for i := 1; i < 9000000; i++ {
+	for i := 1; i < 1000000; i++ {
 		dt := date.Add(time.Second * time.Duration(i))
 		n := rand.Float64()*(39-35) + 35
 		tp := fmt.Sprintf("%.1f", n)
@@ -65,7 +102,7 @@ func TestInsertMore(t *testing.T) {
 		}
 		name := names[rand.Intn(namesSize)]
 		fmt.Println("i=", i, "time: ", dt, " status: ", status, " temperature: ", tp, " name: ", name)
-		checkError(session.InsertStringRecord("root.ln.g1.d2", []string{"temperature", "status", "name"}, []string{tp, status, name}, dt.UnixMilli()))
+		checkError(session.InsertStringRecord("root.ln.g2.d1", []string{"temperature", "status", "name"}, []string{tp, status, name}, dt.UnixMilli()))
 	}
 }
 
@@ -79,8 +116,14 @@ func TestName(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
+	obj, err := sessionPool.BorrowObject(context.Background())
+	if err != nil {
+		log.Panic(err)
+	}
+	session := obj.(*iotClient.Session)
 	var timeout int64 = 1000
-	if ds, err := session.ExecuteQueryStatement("select * from root.ln.g1.d1", &timeout); err == nil {
+	//if ds, err := session.ExecuteQueryStatement("select last status,name,temperature from root.ln.g1.d3 order by timeseries", &timeout); err == nil {
+	if ds, err := session.ExecuteQueryStatement("select status,name,temperature from root.ln.g1.d3 order by time desc limit 1", &timeout); err == nil {
 		printDevice1(ds)
 		ds.Close()
 	} else {
@@ -102,19 +145,31 @@ func printDevice1(sds *iotClient.SessionDataSet) {
 		if showTimestamp {
 			fmt.Printf("%s\t", sds.GetText(iotClient.TimestampColumnName))
 		}
-		var temperature float32
-		var status bool
+		var name string
+		var value string
+		var dataType string
 
 		// All of iotdb datatypes can be scan into string variables
-		if err := sds.Scan(&temperature, &status); err != nil {
+		if err := sds.Scan(&name, &value, &dataType); err != nil {
 			log.Fatal(err)
 		}
 		whitespace := "\t\t"
-		fmt.Printf("%v%s", temperature, whitespace)
-		fmt.Printf("%v%s", status, whitespace)
-		fmt.Println()
-		record, _ := sds.GetRowRecord()
-		fmt.Printf("%+v\n", record)
+		fmt.Printf("%v%s", name, whitespace)
+		fmt.Printf("%v%s", value, whitespace)
+		fmt.Printf("%v%s", dataType, whitespace)
+		fmt.Println("\n............................................")
+
+		if record, err := sds.GetRowRecord(); err == nil {
+			for _, field := range record.GetFields() {
+				v := field.GetValue()
+				if field.IsNull() {
+					v = "null"
+				}
+				fmt.Printf("%v\t\t", v)
+			}
+			fmt.Println()
+		}
+		fmt.Println("----------------------------------------------")
 	}
 }
 
