@@ -44,7 +44,17 @@ func Test_LastRun(t *testing.T) {
 
 func Test_LimitRunsTo(t *testing.T) {
 	s := gocron.NewScheduler(time.UTC)
-	job, _ := s.Every(1).Second().Do(task)
+	job, _ := s.Every(1).Second().Do(func() {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err)
+			}
+		}()
+		fmt.Println("aaa")
+		var a = 1
+		var b = 0
+		fmt.Println(">", a/b)
+	})
 	job.LimitRunsTo(5)
 	s.StartBlocking()
 }

@@ -17,6 +17,7 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
+	github.com/spf13/cast v1.5.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
 )
