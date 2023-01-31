@@ -13,6 +13,6 @@ func main() {
 	// md5(token+时间戳)
 	hash := md5.Sum([]byte(fmt.Sprintf("%s%d", token, timestamp)))
 	encryptionToken := fmt.Sprintf("%x", hash)
-	fmt.Println("  timestamp:       ", timestamp)
+	fmt.Println("  timestampKey:       ", timestamp)
 	fmt.Println("  encryptionToken: ", encryptionToken)
 }

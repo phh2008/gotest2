@@ -15,13 +15,13 @@ type People struct {
 }
 
 type A struct {
-	list []*People
+	list []People
 }
 
 func TestSlice1(t *testing.T) {
 	tom := People{Name: "tom", Age: 21, Birthday: time.Now()}
 	tom2 := People{Name: "tom2", Age: 22, Birthday: time.Now()}
-	var list = []*People{&tom, &tom2}
+	var list = []People{tom, tom2}
 	var a = A{}
 	a.list = list
 	fmt.Println(a.list)

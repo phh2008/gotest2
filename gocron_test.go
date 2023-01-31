@@ -171,3 +171,22 @@ func Test_SetMaxConcurrentJobs(t *testing.T) {
 	s.StartAsync()
 	select {}
 }
+
+func TestJobsA01(t *testing.T) {
+	s := gocron.NewScheduler(time.UTC)
+	j, _ := s.Every(3).Seconds().Do(func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println("xxx")
+	})
+	fmt.Println(j.IsRunning())
+	s.StartAsync()
+	s.Every(5).Seconds().Do(func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println("ccc")
+	})
+	s.Every(5).Seconds().Do(func() {
+		time.Sleep(2 * time.Second)
+		fmt.Println("ddd")
+	})
+	select {}
+}
