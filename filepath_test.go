@@ -30,4 +30,6 @@ func TestFilepath(t *testing.T) {
 	fmt.Println("Ext：", filepath.Ext("D:file\\upload\\image\\abc.jpg"))
 	fmt.Println("Ext：", filepath.Ext("D:file\\upload\\image\\"))
 	fmt.Println("Ext：", filepath.Ext("./file/upload/image"))
+
+	fmt.Println(filepath.Join("/upload/log", "1002", "device01", "aaaaaaa.log"))
 }
