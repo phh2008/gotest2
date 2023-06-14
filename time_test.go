@@ -37,3 +37,16 @@ func TestUTC2CST(t *testing.T) {
 	// 本地时间(北京): 2023-01-09 17:54:45
 	fmt.Println(date.Local().Format("2006-01-02 15:04:05"))
 }
+
+func TestSub(t *testing.T) {
+	before := time.Now().Add(-time.Hour * 24)
+	fmt.Println(before)
+	fmt.Println(time.Since(before).Milliseconds() / 1000)
+}
+
+func Test0001(t *testing.T) {
+	var a uint64 = 2
+	var b uint64 = 4
+	c := a - b
+	fmt.Println(c)
+}

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"log"
 	"testing"
 	"time"
@@ -150,4 +152,23 @@ func TestGjson04(t *testing.T) {
 		log.Println(key, " :: ", value)
 		return true
 	})
+}
+
+func TestSjson01(t *testing.T) {
+	json := `[{"first":"a1","last":"a2"},{"first":"b1","last":"b2"}]`
+	arr := gjson.Get(json, "@this").Array()
+	value, _ := sjson.SetRaw("[]", "0", `{"first":"c1","last":"c2"}`)
+	for _, v := range arr {
+		value, _ = sjson.SetRaw(value, "-1", v.Raw)
+	}
+	println(value)
+}
+
+func TestGjson05(t *testing.T) {
+	json := `{"EventType":"FileDeleted","FileDeleteEvent":{"FileIdSet":["243791581461656546","11111122222"],"FileDeleteResultInfo":[{"FileId":"243791581461656546","DeleteParts":[]}]}}`
+	result := gjson.Get(json, "@this")
+	arr := result.Get("FileDeleteEvent.FileIdSet").Array()
+	for _, v := range arr {
+		fmt.Println(v.String())
+	}
 }

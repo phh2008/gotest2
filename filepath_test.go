@@ -32,4 +32,7 @@ func TestFilepath(t *testing.T) {
 	fmt.Println("Ext：", filepath.Ext("./file/upload/image"))
 
 	fmt.Println(filepath.Join("/upload/log", "1002", "device01", "aaaaaaa.log"))
+
+	fmt.Println("\\\\转换成/", filepath.ToSlash("D:file\\upload\\image\\abc.jpg"))
+
 }
