@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -54,6 +55,8 @@ func main() {
 	for k, v := range data {
 		fmt.Printf("%25s : %s \n", k, v)
 	}
+	bt, _ := json.Marshal(&data)
+	fmt.Println(string(bt))
 }
 
 // createSign 生成签名串
